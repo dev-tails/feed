@@ -32,46 +32,36 @@ document.addEventListener("DOMContentLoaded", function () {
       const entries = [];
 
       for (feed of feeds) {
-        const res = await fetch(feed.url);
+        const res = await fetch(feed.url, {
+          headers: {
+            Accept: "application/rss+xml",
+          },
+        });
         const body = await res.text();
 
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(body, "text/xml");
-        const feedNode = xmlDoc.getElementsByTagName("feed")[0];
-        const entryNodes = feedNode.getElementsByTagName("entry");
-
-        for (const entry of entryNodes) {
-          const link = entry
-            .getElementsByTagName("link")[0]
-            .getAttribute("href");
-          const title = entry.getElementsByTagName("title")[0].innerHTML;
-          const published =
-            entry.getElementsByTagName("published")[0].innerHTML;
-          const publishedDate = new Date(published);
-
-          entries.push({
-            link,
-            title,
-            publishedDate,
-          });
+        const feedEntries = feedXmlToEntries(body);
+        for (const e of feedEntries) {
+          entries.push(e);
         }
       }
 
-      const entriesToDisplay = entries.sort((a, b) => {
-        return a.publishedDate < b.publishedDate ? 1 : -1;
-      }).slice(0, 20)
+      const entriesToDisplay = entries
+        .sort((a, b) => {
+          return a.publishedDate < b.publishedDate ? 1 : -1;
+        })
+        .slice(0, 20);
 
       for (const entry of entriesToDisplay) {
         const div = document.createElement("div");
         const link = document.createElement("a");
-        const date = document.createElement("div")
-        date.innerText = entry.publishedDate.toLocaleDateString()
+        const date = document.createElement("div");
+        date.innerText = entry.publishedDate.toLocaleDateString();
 
         link.setAttribute("href", entry.url);
 
         link.innerText = entry.title;
         div.appendChild(link);
-        div.appendChild(date)
+        div.appendChild(date);
         ArticleList.appendChild(div);
       }
     }
@@ -81,17 +71,17 @@ document.addEventListener("DOMContentLoaded", function () {
       for (feed of feeds) {
         const div = document.createElement("div");
         const link = document.createElement("a");
-        link.setAttribute("href", feed.url)
-        link.innerText = feed.url
-        div.appendChild(link)
+        link.setAttribute("href", feed.url);
+        link.innerText = feed.url;
+        div.appendChild(link);
 
-        const removeBtn = document.createElement("button")
-        removeBtn.addEventListener("click", function() {
-          db.delete("feeds", feed.id)
-          FeedList.removeChild(div)
-        })
-        removeBtn.innerText = "x"
-        div.appendChild(removeBtn)
+        const removeBtn = document.createElement("button");
+        removeBtn.addEventListener("click", function () {
+          db.delete("feeds", feed.id);
+          FeedList.removeChild(div);
+        });
+        removeBtn.innerText = "x";
+        div.appendChild(removeBtn);
 
         FeedList.appendChild(div);
       }
@@ -100,3 +90,70 @@ document.addEventListener("DOMContentLoaded", function () {
 
   init();
 });
+
+function feedXmlToEntries(xmlText) {
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+  if (!xmlDoc) {
+    return [];
+  }
+
+  let entries = getEntriesByFeed(xmlDoc);
+  if (!entries.length) {
+    entries = getEntriesByRss(xmlDoc);
+  }
+
+  return entries;
+}
+
+function getEntriesByRss(xmlDoc) {
+  const rssNode = xmlDoc.getElementsByTagName("rss")[0];
+  if (!rssNode) {
+    return [];
+  }
+
+  const itemNodes = rssNode.getElementsByTagName("item");
+
+  const entries = [];
+
+  for (const item of itemNodes) {
+    const link = item.getElementsByTagName("link")[0].getAttribute("href");
+    const title = item.getElementsByTagName("title")[0].innerHTML;
+    const published = item.getElementsByTagName("pubDate")[0].innerHTML;
+    const publishedDate = new Date(published);
+
+    entries.push({
+      link,
+      title,
+      publishedDate,
+    });
+  }
+
+  return entries;
+}
+
+function getEntriesByFeed(xmlDoc) {
+  const feedNode = xmlDoc.getElementsByTagName("feed")[0];
+  if (!feedNode) {
+    return [];
+  }
+
+  const entryNodes = feedNode.getElementsByTagName("entry");
+
+  const entries = [];
+
+  for (const entry of entryNodes) {
+    const link = entry.getElementsByTagName("link")[0].getAttribute("href");
+    const title = entry.getElementsByTagName("title")[0].innerHTML;
+    const published = entry.getElementsByTagName("published")[0].innerHTML;
+    const publishedDate = new Date(published);
+
+    entries.push({
+      link,
+      title,
+      publishedDate,
+    });
+  }
+
+  return entries;
+}
