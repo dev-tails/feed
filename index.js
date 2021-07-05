@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return feed.url
       });
 
-      const baseUrl = "http://localhost:3000";
+      const baseUrl = "" //"http://localhost:3000";
       const res = await fetch(baseUrl + "/api/feeds/fetch", {
         method: "POST",
         headers: {
