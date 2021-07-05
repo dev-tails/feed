@@ -29,25 +29,50 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const ArticleList = document.getElementById("article-list");
     if (ArticleList) {
+      const entries = [];
+
       for (feed of feeds) {
         const res = await fetch(feed.url);
-        const body = await res.text()
+        const body = await res.text();
 
         const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(body,"text/xml");
-        const feedNode = xmlDoc.getElementsByTagName("feed")[0]
-        const entries = feedNode.getElementsByTagName("entry")
-        for (const entry of entries) {
-          const div = document.createElement('div');
-          const link = document.createElement('a')
-          const entryUrl = entry.getElementsByTagName("link")[0].getAttribute("href");
-          link.setAttribute("href", entryUrl);
+        const xmlDoc = parser.parseFromString(body, "text/xml");
+        const feedNode = xmlDoc.getElementsByTagName("feed")[0];
+        const entryNodes = feedNode.getElementsByTagName("entry");
 
-          const entryTitleNode = entry.getElementsByTagName("title")[0];
-          link.innerText = entryTitleNode.innerHTML
-          div.appendChild(link)
-          ArticleList.appendChild(div);
+        for (const entry of entryNodes) {
+          const link = entry
+            .getElementsByTagName("link")[0]
+            .getAttribute("href");
+          const title = entry.getElementsByTagName("title")[0].innerHTML;
+          const published =
+            entry.getElementsByTagName("published")[0].innerHTML;
+          const publishedDate = new Date(published);
+
+          entries.push({
+            link,
+            title,
+            publishedDate,
+          });
         }
+      }
+
+      const entriesToDisplay = entries.sort((a, b) => {
+        return a.publishedDate < b.publishedDate ? 1 : -1;
+      }).slice(0, 20)
+
+      for (const entry of entriesToDisplay) {
+        const div = document.createElement("div");
+        const link = document.createElement("a");
+        const date = document.createElement("div")
+        date.innerText = entry.publishedDate.toLocaleDateString()
+
+        link.setAttribute("href", entry.url);
+
+        link.innerText = entry.title;
+        div.appendChild(link);
+        div.appendChild(date)
+        ArticleList.appendChild(div);
       }
     }
 
