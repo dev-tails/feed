@@ -30,32 +30,25 @@ document.addEventListener("DOMContentLoaded", function () {
     const ArticleList = document.getElementById("article-list");
     if (ArticleList) {
       const entries = [];
+      const urls = feeds.map(function (feed) {
+        return feed.url
+      });
 
-      for (feed of feeds) {
-        const res = await fetch(feed.url, {
-          headers: {
-            Accept: "application/rss+xml",
-          },
-        });
-        const body = await res.text();
+      const baseUrl = "http://localhost:3000";
+      const res = await fetch(baseUrl + "/api/feeds/fetch", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ urls })
+      })
+      const data = await res.json();      
 
-        const feedEntries = feedXmlToEntries(body);
-        for (const e of feedEntries) {
-          entries.push(e);
-        }
-      }
-
-      const entriesToDisplay = entries
-        .sort((a, b) => {
-          return a.publishedDate < b.publishedDate ? 1 : -1;
-        })
-        .slice(0, 20);
-
-      for (const entry of entriesToDisplay) {
+      for (const entry of data.data) {
         const div = document.createElement("div");
         const link = document.createElement("a");
         const date = document.createElement("div");
-        date.innerText = entry.publishedDate.toLocaleDateString();
+        date.innerText = new Date(entry.pubDate).toLocaleDateString();
 
         link.setAttribute("href", entry.url);
 
