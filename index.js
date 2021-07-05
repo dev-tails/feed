@@ -79,8 +79,21 @@ document.addEventListener("DOMContentLoaded", function () {
     const FeedList = document.getElementById("feed-list");
     if (FeedList) {
       for (feed of feeds) {
-        const node = document.createTextNode(feed.url);
-        FeedList.appendChild(node);
+        const div = document.createElement("div");
+        const link = document.createElement("a");
+        link.setAttribute("href", feed.url)
+        link.innerText = feed.url
+        div.appendChild(link)
+
+        const removeBtn = document.createElement("button")
+        removeBtn.addEventListener("click", function() {
+          db.delete("feeds", feed.id)
+          FeedList.removeChild(div)
+        })
+        removeBtn.innerText = "x"
+        div.appendChild(removeBtn)
+
+        FeedList.appendChild(div);
       }
     }
   }
