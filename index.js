@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const date = document.createElement("div");
         date.innerText = new Date(entry.pubDate).toLocaleDateString();
 
-        link.setAttribute("href", entry.url);
+        link.setAttribute("href", entry.link);
 
         link.innerText = entry.title;
         div.appendChild(link);
